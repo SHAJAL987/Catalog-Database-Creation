@@ -1,0 +1,144 @@
+		W O R K I G    C A T A L O G    D A T A B A S E
+---------------------------------------------------------------------------------
+	
+	SETP-1: You should check your database log_mode.
+	------	if it is enabled or ARCHIVELOG mode SKIP STEP-2.
+                
+		SQL> archive log list;
+		SQL> select log_mode from v$database;
+
+	STEP-2: Enable Archive log mode
+	-------
+		=====================ENABLE===========================
+		
+		i) Shutdown Database
+
+			SQL> shutdown immediate;
+
+	       ii) Going to database on to mount stage.
+
+			SQL> startup mount;
+
+	      iii) Set Archive log
+
+			SQL> alter database archivelog;
+			SQL> SELECT  LOG_MODE
+		             FROM    v$database;
+			SQL> archive log list;
+
+	       iv) Now Open database
+
+			SQL> alter database open;
+
+	       ==========================================================
+
+	STEP-3: Go to the BOSS RMAN using CMD/SHELL(UNIX) 
+	------		
+		C:\WINDOWS\system32> rman target sys/sys123@orcl
+		RMAN> exit
+
+	STEP-4: At first create a new service name CATDBDBA150
+        -------
+		LOCATION: D:\app\Administrator\product\12.2.0\dbhome_1\network\admin\tnsnames.ora file
+		---------
+		
+		CREATE: 
+		-------
+		CATDBDBA150 =
+  		  (DESCRIPTION =
+                    (ADDRESS = (PROTOCOL = TCP)(HOST = DESKTOP-FRUC1N2)(PORT = 1521))
+                    (CONNECT_DATA =
+                      (SERVER = DEDICATED)
+                      (SERVICE_NAME = orcl)
+                    )
+                  ) 
+        
+       STEP-5: Then Go to CMD and write code
+       -------
+		C:\WINDOWS\system32> tnsping CATDBDBA150
+
+       STEP-6: Then craete a new tablespace & a new user
+       -------
+		SQL> conn sys/sys123@orcl as sysdba;
+		SQL> select name from v$tablespace;
+		SQL> select name from v$datafile;
+
+		SQL> create tablespace CATDBDBA150_TBS1 
+                     datafile 'G:\DatabaseAdmin\oradata\orcl\CATDBDBA150_TBS1.dbf'
+                     size 50M
+                     extent management local
+                     segment space management auto;
+
+       STEP-7: Create User.(SYS)
+       -------
+		SQL> create user          RMAN_CATDBDBA150
+		     identified by        RMAN_CATDBDBA150
+                     default tablespace   CATDBDBA150_TBS1
+                     temporary tablespace temp
+                     quota unlimited on   CATDBDBA150_TBS1;
+
+
+       STEP-8: Then Grant recovery_catalog_owner to new user (SYS)
+       -------
+		SQL> grant RECOVERY_CATALOG_OWNER  to RMAN_CATDBDBA150;
+		SQL> grant CREATE SESSION,RESOURCE to RMAN_CATDBDBA150;
+
+
+       STEP-9: Then Sqldeveloper connection to new user RMAN_CATDBDBA146
+       ------
+		
+		username: RMAN_CATDBDBA150
+		Password: RMAN_CATDBDBA150
+
+		Connection Type: Basic Role: Default
+
+		Hostname     : localhost
+		Port         : 1521
+		Servise Name : orcl
+
+		** Then go to sql developer for 
+		** check some table RMAN_CATDBDBA150 user
+
+       STEP-10: Then go to cmd and enter catalog database
+       --------
+		C:\WINDOWS\system32> rman catalog RMAN_CATDBDBA150/RMAN_CATDBDBA150@CATDBDBA150
+		RMAN> create catalog; 
+
+		** Then go to sql developer for 
+		** check some table RMAN_CATDBDBA150 user 
+
+      STEP-11: Now connect RMAN and CATALOG at a time and register database
+      -------
+	        C:\WINDOWS\system32> rman target sys/sys123@orcl catalog RMAN_CATDBDBA150/RMAN_CATDBDBA150@CATDBDBA150
+		RMAN> register database;
+
+      STEP-12: Write some script for show
+      --------
+	        RMAN> list script names;
+		RMAN> create script hot_bkp
+		      {
+  			show all;
+		      }
+		RMAN> create script hot_bk2
+		      {
+  			show all;
+		      }
+		RMAN> create script hot_bk_2
+		      {
+  			show all;
+		      }
+		RMAN> create script my_bkp
+		      {
+  			show all;
+		      }
+
+		RMAN> list script names;
+
+
+
+
+
+
+
+
+
